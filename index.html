@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Management System</title>
+
+
+  <!-- Supabase CDN library. This gives us the global "supabase" object in JavaScript. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #f4f7fb;
+      color: #1f2937;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      width: min(1100px, 92%);
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    .app-header {
+      margin-bottom: 24px;
+    }
+
+    .app-header h1 {
+      color: #111827;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin-bottom: 8px;
+    }
+
+    .app-header p {
+      color: #5b6472;
+      max-width: 720px;
+    }
+
+    .section {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+      margin-bottom: 20px;
+      padding: 22px;
+    }
+
+    .section h2 {
+      color: #111827;
+      font-size: 1.2rem;
+      margin-bottom: 14px;
+    }
+
+    .code-box {
+      background: #111827;
+      border-radius: 8px;
+      color: #d1fae5;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 0.92rem;
+      overflow-x: auto;
+      padding: 16px;
+      white-space: pre;
+    }
+
+    .student-form,
+    .lead-form,
+    .auth-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .lead-form {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lead-form .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .lead-intro {
+      color: #5b6472;
+      margin-bottom: 18px;
+      max-width: 760px;
+    }
+
+    .auth-status {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #4b5563;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+    }
+
+    .auth-status strong {
+      color: #111827;
+    }
+
+    .user-pill {
+      background: #dbeafe;
+      border-radius: 999px;
+      color: #1e40af;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      word-break: break-word;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    label {
+      color: #374151;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #111827;
+      font: inherit;
+      padding: 11px 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+      outline: none;
+    }
+
+    select:focus,
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      min-height: 44px;
+      padding: 10px 16px;
+      transition: transform 0.2s, opacity 0.2s, background 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+    }
+
+    .btn-edit {
+      background: #f59e0b;
+      color: #111827;
+      min-height: 36px;
+      padding: 7px 12px;
+    }
+
+    .btn-delete {
+      background: #dc2626;
+      color: #ffffff;
+      min-height: 36px;
+      padding: 7px 12px;
+    }
+
+    .alert {
+      border-radius: 8px;
+      display: none;
+      font-weight: 700;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert.success {
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+
+    .alert.error {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .lead-success {
+      background: #ecfdf5;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      color: #166534;
+      display: none;
+      padding: 18px;
+    }
+
+    .lead-success.show {
+      display: block;
+    }
+
+    .lead-success h3 {
+      color: #14532d;
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 13px 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #374151;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .empty-message {
+      color: #6b7280;
+      padding: 18px 0 4px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .student-form,
+      .lead-form,
+      .auth-form {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-status {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .section {
+        padding: 18px;
+      }
+    }
+  </style>
+
+</head>
+<body>
+  <main class="page">
+    <header class="app-header">
+      <h1>Student Management System</h1>
+      <p>A beginner-friendly CRUD application built with HTML, CSS, Vanilla JavaScript, and Supabase.</p>
+    </header>
+
+    <section class="section">
+      <h2>Supabase Configuration</h2>
+      <pre class="code-box">const supabaseUrl = 'YOUR_SUPABASE_URL'
+const supabaseKey = 'YOUR_SUPABASE_PUBLISHABLE_KEY'</pre>
+    </section>
+
+    <section class="section">
+      <h2>Required SQL Table</h2>
+      <pre class="code-box">create table students (
+  id bigint generated by default as identity primary key,
+  name text,
+  email text
+);
+
+alter table students enable row level security;
+
+create policy "Authenticated users can read students"
+on students for select
+to authenticated
+using (true);
+
+create policy "Authenticated users can create students"
+on students for insert
+to authenticated
+with check (true);
+
+create policy "Authenticated users can update students"
+on students for update
+to authenticated
+using (true)
+with check (true);
+
+create policy "Authenticated users can delete students"
+on students for delete
+to authenticated
+using (true);</pre>
+    </section>
+
+    <section class="section">
+      <h2>Real Estate Leads SQL Table</h2>
+      <pre class="code-box">create table real_estate_leads (
+  id bigint generated by default as identity primary key,
+  full_name text not null,
+  email text not null,
+  phone text not null,
+  property_type text not null,
+  budget_range text not null,
+  preferred_location text not null,
+  message text,
+  created_at timestamp with time zone default now()
+);
+
+alter table real_estate_leads enable row level security;
+
+create policy "Anyone can submit real estate leads"
+on real_estate_leads for insert
+to anon
+with check (true);</pre>
+    </section>
+
+    <section class="section">
+      <h2>Real Estate Lead Form</h2>
+      <p class="lead-intro">Share your property preferences and our real estate team will contact you with suitable options.</p>
+
+      <form id="leadForm" class="lead-form">
+        <div class="form-group">
+          <label for="leadName">Full Name</label>
+          <input type="text" id="leadName" placeholder="Enter your full name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="leadEmail">Email Address</label>
+          <input type="email" id="leadEmail" placeholder="Enter your email address" required />
+        </div>
+
+        <div class="form-group">
+          <label for="leadPhone">Phone Number</label>
+          <input type="tel" id="leadPhone" placeholder="Enter your phone number" required />
+        </div>
+
+        <div class="form-group">
+          <label for="propertyType">Property Type</label>
+          <select id="propertyType" required>
+            <option value="">Select property type</option>
+            <option value="Apartment">Apartment</option>
+            <option value="House">House</option>
+            <option value="Villa">Villa</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Plot">Plot</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="budgetRange">Budget Range</label>
+          <select id="budgetRange" required>
+            <option value="">Select budget range</option>
+            <option value="Under 100,000">Under 100,000</option>
+            <option value="100,000 - 250,000">100,000 - 250,000</option>
+            <option value="250,000 - 500,000">250,000 - 500,000</option>
+            <option value="500,000 - 1,000,000">500,000 - 1,000,000</option>
+            <option value="Above 1,000,000">Above 1,000,000</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="preferredLocation">Preferred Location</label>
+          <input type="text" id="preferredLocation" placeholder="Enter city or area" required />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="leadMessage">Additional Requirements</label>
+          <textarea id="leadMessage" placeholder="Tell us about bedrooms, timeline, investment goals, or other details"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary full-width">Submit Lead</button>
+      </form>
+
+      <div id="leadSuccessMessage" class="lead-success">
+        <h3>Thank you! Your request has been submitted.</h3>
+        <p>Our real estate team will review your details and contact you soon.</p>
+      </div>
+    </section>
+
+    <!--
+    Login and signup section is temporarily commented out.
+
+    <section class="section">
+      <h2>Login and Signup</h2>
+      <div id="authStatus" class="auth-status">
+        <strong>Account Status</strong>
+        <span id="authStatusText">Checking login status...</span>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <div class="form-group auth-input-group">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" placeholder="Enter your email" required />
+        </div>
+
+        <div class="form-group auth-input-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" placeholder="Enter your password" minlength="6" required />
+        </div>
+
+        <button type="button" id="signupButton" class="btn-success">Signup</button>
+        <button type="submit" id="loginButton" class="btn-primary">Login</button>
+        <button type="button" id="logoutButton" class="btn-secondary" style="display: none;">Logout</button>
+      </form>
+    </section>
+    -->
+
+    <section class="section">
+      <h2>Add or Update Student</h2>
+      <div id="alertBox" class="alert"></div>
+
+      <form id="studentForm" class="student-form">
+        <div class="form-group">
+          <label for="studentName">Student Name</label>
+          <input type="text" id="studentName" placeholder="Enter student name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="studentEmail">Student Email</label>
+          <input type="email" id="studentEmail" placeholder="Enter student email" required />
+        </div>
+
+        <button type="submit" id="saveButton" class="btn-primary">Save Student</button>
+        <button type="button" id="cancelButton" class="btn-secondary" style="display: none;">Cancel Edit</button>
+      </form>
+    </section>
+
+    <section class="section">
+      <h2>All Students</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <tr>
+              <td colspan="4" class="empty-message">Loading students...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /*
+      ============================================================
+      SUPABASE CONFIGURATION
+      ============================================================
+      Replace these two values with your own Supabase project URL
+      and publishable key from the Supabase dashboard.
+    */
+    const supabaseUrl = 'https://weilazrynusifftrhfwe.supabase.co'
+    const supabaseKey = 'sb_publishable_-sZiqEvEBu88ca0i-PyUiA_HJrmw-Pn'
+
+    /*
+      Supabase connection:
+      The CDN library creates a global object named "supabase".
+      We use createClient() to connect this web page to our database.
+    */
+    const isSupabaseConfigured =
+      supabaseUrl !== 'YOUR_SUPABASE_URL' &&
+      supabaseKey !== 'YOUR_SUPABASE_ANON_KEY' &&
+      supabaseKey !== 'YOUR_SUPABASE_PUBLISHABLE_KEY'
+
+    const supabaseClient = isSupabaseConfigured
+      ? supabase.createClient(supabaseUrl, supabaseKey)
+      : null
+
+    /*
+      Login and signup variables are temporarily commented out.
+
+      const authForm = document.getElementById('authForm')
+      const authEmailInput = document.getElementById('authEmail')
+      const authPasswordInput = document.getElementById('authPassword')
+      const signupButton = document.getElementById('signupButton')
+      const loginButton = document.getElementById('loginButton')
+      const logoutButton = document.getElementById('logoutButton')
+      const authStatusText = document.getElementById('authStatusText')
+      const authInputGroups = document.querySelectorAll('.auth-input-group')
+    */
+    const studentForm = document.getElementById('studentForm')
+    const studentNameInput = document.getElementById('studentName')
+    const studentEmailInput = document.getElementById('studentEmail')
+    const studentsTableBody = document.getElementById('studentsTableBody')
+    const saveButton = document.getElementById('saveButton')
+    const cancelButton = document.getElementById('cancelButton')
+    const alertBox = document.getElementById('alertBox')
+    const leadForm = document.getElementById('leadForm')
+    const leadNameInput = document.getElementById('leadName')
+    const leadEmailInput = document.getElementById('leadEmail')
+    const leadPhoneInput = document.getElementById('leadPhone')
+    const propertyTypeInput = document.getElementById('propertyType')
+    const budgetRangeInput = document.getElementById('budgetRange')
+    const preferredLocationInput = document.getElementById('preferredLocation')
+    const leadMessageInput = document.getElementById('leadMessage')
+    const leadSuccessMessage = document.getElementById('leadSuccessMessage')
+
+    let editingStudentId = null
+    // let currentUser = null
+
+    function showAlert(message, type) {
+      alertBox.textContent = message
+      alertBox.className = 'alert show ' + type
+
+      setTimeout(function () {
+        alertBox.className = 'alert'
+        alertBox.textContent = ''
+      }, 3000)
+    }
+
+    function resetForm() {
+      studentForm.reset()
+      editingStudentId = null
+      saveButton.textContent = 'Save Student'
+      cancelButton.style.display = 'none'
+    }
+
+    function setFormLoading(isLoading) {
+      saveButton.disabled = isLoading
+      cancelButton.disabled = isLoading
+      studentNameInput.disabled = isLoading
+      studentEmailInput.disabled = isLoading
+    }
+
+    /*
+      Login and signup functions are temporarily commented out.
+
+      function setAuthLoading(isLoading) {
+        signupButton.disabled = isLoading
+        loginButton.disabled = isLoading
+        logoutButton.disabled = isLoading
+        authEmailInput.disabled = isLoading
+        authPasswordInput.disabled = isLoading
+      }
+
+      function setStudentFormEnabled(isEnabled) {
+        saveButton.disabled = !isEnabled
+        cancelButton.disabled = !isEnabled
+        studentNameInput.disabled = !isEnabled
+        studentEmailInput.disabled = !isEnabled
+      }
+
+      function showLoggedOutStudentsMessage() {
+        studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Please login to view students.</td></tr>'
+      }
+
+      function updateAuthUI(user) {
+        currentUser = user
+
+        if (user) {
+          authStatusText.textContent = user.email
+          authStatusText.className = 'user-pill'
+          authInputGroups.forEach(function (group) {
+            group.style.display = 'none'
+          })
+          signupButton.style.display = 'none'
+          loginButton.style.display = 'none'
+          logoutButton.style.display = 'inline-block'
+          authEmailInput.value = ''
+          authPasswordInput.value = ''
+          setStudentFormEnabled(true)
+        } else {
+          authStatusText.textContent = 'Not logged in'
+          authStatusText.className = ''
+          authInputGroups.forEach(function (group) {
+            group.style.display = 'flex'
+          })
+          signupButton.style.display = 'inline-block'
+          loginButton.style.display = 'inline-block'
+          logoutButton.style.display = 'none'
+          resetForm()
+          setStudentFormEnabled(false)
+          showLoggedOutStudentsMessage()
+        }
+      }
+
+      async function signupUser(email, password) {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email: email,
+          password: password
+        })
+
+        if (error) {
+          showAlert('Signup error: ' + error.message, 'error')
+          return
+        }
+
+        if (data.user && data.session) {
+          showAlert('Signup successful. You are now logged in.', 'success')
+        } else {
+          showAlert('Signup successful. Please check your email to confirm your account.', 'success')
+        }
+      }
+
+      async function loginUser(email, password) {
+        const { error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        })
+
+        if (error) {
+          showAlert('Login error: ' + error.message, 'error')
+          return
+        }
+
+        showAlert('Logged in successfully.', 'success')
+      }
+
+      async function logoutUser() {
+        const { error } = await supabaseClient.auth.signOut()
+
+        if (error) {
+          showAlert('Logout error: ' + error.message, 'error')
+          return
+        }
+
+        showAlert('Logged out successfully.', 'success')
+      }
+    */
+
+    /*
+      Fetch operation:
+      This function reads all rows from the "students" table.
+      The order() method shows the newest students first.
+    */
+    async function fetchStudents() {
+      if (!isSupabaseConfigured) {
+        showAlert('Please replace the Supabase URL and publishable key before using the app.', 'error')
+        studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Supabase is not configured yet.</td></tr>'
+        return
+      }
+
+      studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Loading students...</td></tr>'
+
+      const { data, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .order('id', { ascending: false })
+
+      if (error) {
+        showAlert('Error fetching students: ' + error.message, 'error')
+        studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Could not load students.</td></tr>'
+        return
+      }
+
+      displayStudents(data)
+    }
+
+    function displayStudents(students) {
+      studentsTableBody.innerHTML = ''
+
+      if (students.length === 0) {
+        studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No students found.</td></tr>'
+        return
+      }
+
+      students.forEach(function (student) {
+        const row = document.createElement('tr')
+        const idCell = document.createElement('td')
+        const nameCell = document.createElement('td')
+        const emailCell = document.createElement('td')
+        const actionsCell = document.createElement('td')
+        const actions = document.createElement('div')
+        const editButton = document.createElement('button')
+        const deleteButton = document.createElement('button')
+
+        idCell.textContent = student.id
+        nameCell.textContent = student.name
+        emailCell.textContent = student.email
+
+        actions.className = 'actions'
+
+        editButton.textContent = 'Edit'
+        editButton.className = 'btn-edit'
+        editButton.addEventListener('click', function () {
+          startEditStudent(student.id, student.name, student.email)
+        })
+
+        deleteButton.textContent = 'Delete'
+        deleteButton.className = 'btn-delete'
+        deleteButton.addEventListener('click', function () {
+          deleteStudent(student.id)
+        })
+
+        actions.appendChild(editButton)
+        actions.appendChild(deleteButton)
+        actionsCell.appendChild(actions)
+
+        row.appendChild(idCell)
+        row.appendChild(nameCell)
+        row.appendChild(emailCell)
+        row.appendChild(actionsCell)
+
+        studentsTableBody.appendChild(row)
+      })
+    }
+
+    /*
+      Insert operation:
+      This function creates a new student row in Supabase.
+      The insert() method receives an object with name and email.
+    */
+    async function createStudent(name, email) {
+      const { error } = await supabaseClient
+        .from('students')
+        .insert([{ name: name, email: email }])
+
+      if (error) {
+        showAlert('Error creating student: ' + error.message, 'error')
+        return
+      }
+
+      showAlert('Student created successfully.', 'success')
+      resetForm()
+      await fetchStudents()
+    }
+
+    /*
+      Update operation:
+      This function updates the selected student.
+      The eq() method tells Supabase which row ID should be changed.
+    */
+    async function updateStudent(id, name, email) {
+      const { error } = await supabaseClient
+        .from('students')
+        .update({ name: name, email: email })
+        .eq('id', id)
+
+      if (error) {
+        showAlert('Error updating student: ' + error.message, 'error')
+        return
+      }
+
+      showAlert('Student updated successfully.', 'success')
+      resetForm()
+      await fetchStudents()
+    }
+
+    function startEditStudent(id, name, email) {
+      editingStudentId = id
+      studentNameInput.value = name
+      studentEmailInput.value = email
+      saveButton.textContent = 'Update Student'
+      cancelButton.style.display = 'inline-block'
+      studentNameInput.focus()
+    }
+
+    /*
+      Delete operation:
+      This function deletes one student after the user confirms.
+      The eq() method makes sure only the selected row is removed.
+    */
+    async function deleteStudent(id) {
+      const confirmDelete = confirm('Are you sure you want to delete this student?')
+
+      if (!confirmDelete) {
+        return
+      }
+
+      const { error } = await supabaseClient
+        .from('students')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        showAlert('Error deleting student: ' + error.message, 'error')
+        return
+      }
+
+      showAlert('Student deleted successfully.', 'success')
+      await fetchStudents()
+    }
+
+    studentForm.addEventListener('submit', async function (event) {
+      event.preventDefault()
+
+      const name = studentNameInput.value.trim()
+      const email = studentEmailInput.value.trim()
+
+      if (name === '' || email === '') {
+        showAlert('Please enter both student name and student email.', 'error')
+        return
+      }
+
+      if (!isSupabaseConfigured) {
+        showAlert('Please replace the Supabase URL and publishable key before saving students.', 'error')
+        return
+      }
+
+      setFormLoading(true)
+
+      if (editingStudentId === null) {
+        await createStudent(name, email)
+      } else {
+        await updateStudent(editingStudentId, name, email)
+      }
+
+      setFormLoading(false)
+    })
+
+    cancelButton.addEventListener('click', function () {
+      resetForm()
+    })
+
+    /*
+      Real estate lead form:
+      When the user submits the form, save the lead in Supabase.
+      If the save is successful, hide the form and show a success message.
+    */
+    leadForm.addEventListener('submit', async function (event) {
+      event.preventDefault()
+
+      if (!isSupabaseConfigured) {
+        showAlert('Please replace the Supabase URL and publishable key before saving leads.', 'error')
+        return
+      }
+
+      const leadData = {
+        full_name: leadNameInput.value.trim(),
+        email: leadEmailInput.value.trim(),
+        phone: leadPhoneInput.value.trim(),
+        property_type: propertyTypeInput.value,
+        budget_range: budgetRangeInput.value,
+        preferred_location: preferredLocationInput.value.trim(),
+        message: leadMessageInput.value.trim()
+      }
+
+      const { error } = await supabaseClient
+        .from('real_estate_leads')
+        .insert([leadData])
+
+      if (error) {
+        showAlert('Error saving lead: ' + error.message, 'error')
+        return
+      }
+
+      leadForm.style.display = 'none'
+      leadSuccessMessage.classList.add('show')
+    })
+
+    /*
+      Login and signup event listeners are temporarily commented out.
+
+      authForm.addEventListener('submit', async function (event) {
+        event.preventDefault()
+
+        const email = authEmailInput.value.trim()
+        const password = authPasswordInput.value.trim()
+
+        if (email === '' || password === '') {
+          showAlert('Please enter both email and password.', 'error')
+          return
+        }
+
+        if (!isSupabaseConfigured) {
+          showAlert('Please replace the Supabase URL and publishable key before logging in.', 'error')
+          return
+        }
+
+        setAuthLoading(true)
+        await loginUser(email, password)
+        setAuthLoading(false)
+      })
+
+      signupButton.addEventListener('click', async function () {
+        const email = authEmailInput.value.trim()
+        const password = authPasswordInput.value.trim()
+
+        if (email === '' || password === '') {
+          showAlert('Please enter both email and password.', 'error')
+          return
+        }
+
+        if (password.length < 6) {
+          showAlert('Password must be at least 6 characters long.', 'error')
+          return
+        }
+
+        if (!isSupabaseConfigured) {
+          showAlert('Please replace the Supabase URL and publishable key before signing up.', 'error')
+          return
+        }
+
+        setAuthLoading(true)
+        await signupUser(email, password)
+        setAuthLoading(false)
+      })
+
+      logoutButton.addEventListener('click', async function () {
+        if (!isSupabaseConfigured) {
+          showAlert('Please replace the Supabase URL and publishable key before logging out.', 'error')
+          return
+        }
+
+        setAuthLoading(true)
+        await logoutUser()
+        setAuthLoading(false)
+      })
+
+      async function checkCurrentSession() {
+        if (!isSupabaseConfigured) {
+          authStatusText.textContent = 'Supabase is not configured yet'
+          setStudentFormEnabled(false)
+          studentsTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">Supabase is not configured yet.</td></tr>'
+          return
+        }
+
+        const { data, error } = await supabaseClient.auth.getSession()
+
+        if (error) {
+          showAlert('Session error: ' + error.message, 'error')
+          updateAuthUI(null)
+          return
+        }
+
+        updateAuthUI(data.session ? data.session.user : null)
+
+        if (data.session) {
+          await fetchStudents()
+        }
+      }
+
+      if (isSupabaseConfigured) {
+        supabaseClient.auth.onAuthStateChange(async function (event, session) {
+          updateAuthUI(session ? session.user : null)
+
+          if (session) {
+            await fetchStudents()
+          }
+        })
+      }
+
+      checkCurrentSession()
+    */
+
+    // Read students as soon as the page opens.
+    fetchStudents()
+  </script>
+</body>
+</html>
